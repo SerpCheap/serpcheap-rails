@@ -33,8 +33,16 @@ module SerpCheap
         store = @configuration.cache_store
         return yield unless @configuration.cache_enabled && store
 
-        key = "serpcheap:#{kind}:#{Digest::MD5.hexdigest(JSON.generate(key_parts))}"
+        key = "serpcheap:#{kind}:#{Digest::MD5.hexdigest(JSON.generate(normalize(key_parts)))}"
         store.fetch(key, expires_in: @configuration.cache_ttl) { yield }
+      end
+
+      def normalize(value)
+        case value
+        when Hash then value.sort_by { |k, _| k.to_s }.to_h.transform_values { |v| normalize(v) }
+        when Array then value.map { |v| normalize(v) }
+        else value
+        end
       end
     end
   end
